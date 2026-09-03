@@ -1,0 +1,23 @@
+{
+  "label": "[SYNTHETIC TEST FIXTURE - NOT BENCHMARK DATA]",
+  "pair_id": "pair_test1",
+  "transform": [
+    [
+      0.9176295349746149,
+      0.2458780928473947,
+      -21.857952722434447
+    ],
+    [
+      -0.2458780928473947,
+      0.9176295349746149,
+      69.03163081543164
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "transform_type": "homography",
+  "description": "Synthetic affine transform (15 deg rotation, 0.95 scale, [20, -15] shift)"
+}

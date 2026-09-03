@@ -1,0 +1,55 @@
+dataset:
+  pairs_dir: "data/pairs"
+  ground_truth_dir: "data/ground_truth"
+  raw_dir: "data/raw"
+  supported_formats: ["png", "jpg", "jpeg", "tif", "tiff"]
+  naming_pattern: "reference{n}"
+
+output:
+  results_dir: "results"
+  raw_dir: "results/raw"
+  aggregated_dir: "results/aggregated"
+  visualizations_dir: "results/visualizations"
+
+methods:
+  enabled:
+    - sift
+    - akaze
+    - rift2
+    - superpoint_lightglue
+    - efficient_loftr
+    - arosics
+
+preprocessing:
+  convert_to_grayscale: true
+  max_dimension: null
+  normalize_8bit: true
+
+matching:
+  ratio_test_threshold: 0.75
+  min_matches: 4
+
+ransac:
+  method: "RANSAC"
+  reproj_threshold: 5.0
+  max_iters: 5000
+  confidence: 0.999
+
+evaluation:
+  success_min_inliers: 10
+  success_min_inlier_ratio: 0.10
+
+visualization:
+  generate: true
+  match_visualization: true
+  overlay_visualization: true
+  max_matches_drawn: 200
+
+device:
+  prefer_gpu: true
+  device: "cuda"
+  fallback_to_cpu: true
+
+logging:
+  level: "INFO"
+  log_dir: "logs"

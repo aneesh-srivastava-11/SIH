@@ -1,0 +1,141 @@
+paper:
+  title: "Comparative Evaluation of Traditional and Deep Learning Feature Matching Algorithms using Chandrayaan-2 Lunar Data"
+  authors: "Ridhi Makharia, Jai G Singla, Amitabh, Nitant Dube, Harish Sharma"
+  organization: "Space Applications Centre (SAC), ISRO & Manipal University Jaipur"
+  arxiv_id: "arXiv:2509.04775"
+  url: "https://arxiv.org/abs/2509.04775"
+
+evaluated_datasets:
+  - id: "OHRC_NAC_Equatorial"
+    sensor_pair: "OHRC (0.26m) - LROC NAC (1.12m)"
+    region: "Equatorial"
+  - id: "OHRC_NAC_Polar"
+    sensor_pair: "OHRC (0.26m) - LROC NAC (0.89m)"
+    region: "Polar"
+  - id: "IIRS_WAC_Equatorial"
+    sensor_pair: "IIRS (71.2m) - LROC WAC (100m)"
+    region: "Equatorial"
+  - id: "IIRS_WAC_Polar"
+    sensor_pair: "IIRS (89.7m) - LROC WAC (100m)"
+    region: "Polar"
+  - id: "DFSAR_SELENE_Equatorial"
+    sensor_pair: "DFSAR (20.5m) - SELENE TC (8.4m)"
+    region: "Equatorial"
+  - id: "DFSAR_SELENE_Polar"
+    sensor_pair: "DFSAR (5.1m) - SELENE TC (8.4m)"
+    region: "Polar"
+
+reported_results:
+  OHRC_NAC_Equatorial:
+    AKAZE:
+      rmse_x: 3.1189
+      rmse_y: 4.7096
+      runtime_sec: 737.1722
+      status: "Success"
+    ASIFT:
+      rmse_x: 1.9946
+      rmse_y: 1.6345
+      runtime_sec: 809.8209
+      status: "Success"
+    RIFT2:
+      rmse_x: 1.5033
+      rmse_y: 1.1888
+      runtime_sec: 36.881
+      status: "Success"
+    SIFT:
+      rmse_x: 3.6096
+      rmse_y: 5.9558
+      runtime_sec: 678.1992
+      status: "Success"
+    SuperGlue:
+      rmse_x: 0.6249
+      rmse_y: 0.5718
+      runtime_sec: 3.809
+      status: "Success"
+
+  OHRC_NAC_Polar:
+    AKAZE: {status: "Failed (NA)", rmse_x: null, rmse_y: null, runtime_sec: null}
+    ASIFT: {status: "Failed (NA)", rmse_x: null, rmse_y: null, runtime_sec: null}
+    RIFT2: {status: "Failed (NA)", rmse_x: null, rmse_y: null, runtime_sec: null}
+    SIFT: {status: "Failed (NA)", rmse_x: null, rmse_y: null, runtime_sec: null}
+    SuperGlue:
+      rmse_x: 0.9234
+      rmse_y: 0.7586
+      runtime_sec: 4.643
+      status: "Success"
+
+  IIRS_WAC_Equatorial:
+    AKAZE:
+      rmse_x: 0.5551
+      rmse_y: 1.0841
+      runtime_sec: 0.1634
+      status: "Success"
+    ASIFT:
+      rmse_x: 0.5578
+      rmse_y: 1.0990
+      runtime_sec: 1.6407
+      status: "Success"
+    RIFT2:
+      rmse_x: 1.4056
+      rmse_y: 1.3579
+      runtime_sec: 7.3894
+      status: "Success"
+    SIFT:
+      rmse_x: 0.6879
+      rmse_y: 1.1066
+      runtime_sec: 0.1207
+      status: "Success"
+    SuperGlue:
+      rmse_x: 0.5069
+      rmse_y: 0.6167
+      runtime_sec: 0.818
+      status: "Success"
+
+  IIRS_WAC_Polar:
+    AKAZE:
+      rmse_x: 0.4595
+      rmse_y: 1.3891
+      runtime_sec: 0.2287
+      status: "Success"
+    ASIFT:
+      rmse_x: 0.9837
+      rmse_y: 0.4501
+      runtime_sec: 2.0922
+      status: "Success"
+    RIFT2:
+      rmse_x: 0.7529
+      rmse_y: 1.1054
+      runtime_sec: 12.716
+      status: "Success"
+    SIFT:
+      rmse_x: 2.0085
+      rmse_y: 0.4050
+      runtime_sec: 0.1607
+      status: "Success"
+    SuperGlue:
+      rmse_x: 0.7681
+      rmse_y: 0.9267
+      runtime_sec: 0.774
+      status: "Success"
+
+  DFSAR_SELENE_Equatorial:
+    AKAZE: {status: "Failed (NA)", rmse_x: null, rmse_y: null, runtime_sec: null}
+    ASIFT: {status: "Failed (NA)", rmse_x: null, rmse_y: null, runtime_sec: null}
+    RIFT2: {status: "Failed (NA)", rmse_x: null, rmse_y: null, runtime_sec: null}
+    SIFT: {status: "Failed (NA)", rmse_x: null, rmse_y: null, runtime_sec: null}
+    SuperGlue:
+      rmse_x: 0.3851
+      rmse_y: 0.8432
+      runtime_sec: 0.745
+      status: "Success"
+
+  DFSAR_SELENE_Polar:
+    AKAZE: {status: "Failed (NA)", rmse_x: null, rmse_y: null, runtime_sec: null}
+    ASIFT: {status: "Failed (NA)", rmse_x: null, rmse_y: null, runtime_sec: null}
+    RIFT2: {status: "Failed (NA)", rmse_x: null, rmse_y: null, runtime_sec: null}
+    SIFT: {status: "Failed (NA)", rmse_x: null, rmse_y: null, runtime_sec: null}
+    SuperGlue:
+      rmse_x: 0.9234
+      rmse_y: 0.7586
+      runtime_sec: 4.643
+      status: "Success"
