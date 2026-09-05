@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Registration Benchmark Platform</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="navbar">
+        <div class="logo">
+            <span class="badge">ISRO / Baseline</span>
+            <h1>Image Registration Benchmarking Platform</h1>
+        </div>
+        <nav class="nav-links">
+            <button class="nav-btn active" data-target="overview-section">Overview</button>
+            <button class="nav-btn" data-target="leaderboard-section">Leaderboard</button>
+            <button class="nav-btn" data-target="visualizations-section">Charts</button>
+            <button class="nav-btn" data-target="pair-inspector-section">Pair Inspector</button>
+            <button class="nav-btn" data-target="isro-section">ISRO Paper Comparison</button>
+        </nav>
+    </header>
+
+    <main class="container">
+
+        <!-- Banner / Notification Container -->
+        <div id="empty-state-banner" class="banner hidden">
+            <div class="banner-icon">ℹ️</div>
+            <div class="banner-content">
+                <h3>No Benchmark Data Available</h3>
+                <p>Add image pairs (e.g. <code>reference1.png</code> and <code>target1.png</code>) to <code>data/pairs/</code> and run <code>python -m pipeline.runner</code> to execute the baseline benchmark.</p>
+            </div>
+        </div>
+
+        <!-- Section 1: Overview -->
+        <section id="overview-section" class="tab-section active">
+            <div class="section-header">
+                <h2>System Overview</h2>
+                <p>Baseline registration performance across evaluated dataset pairs</p>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">Dataset Size</div>
+                    <div class="kpi-value" id="kpi-dataset-size">0</div>
+                    <div class="kpi-subtitle">Image pairs in data/pairs/</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Active Baseline Methods</div>
+                    <div class="kpi-value" id="kpi-total-methods">6</div>
+                    <div class="kpi-subtitle">SIFT, AKAZE, RIFT2, SP+LG, ELoFTR, AROSICS</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Top Performing Method</div>
+                    <div class="kpi-value highlight" id="kpi-best-method">N/A</div>
+                    <div class="kpi-subtitle" id="kpi-best-detail">No benchmark run yet</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Best Mean RMSE</div>
+                    <div class="kpi-value" id="kpi-best-rmse">N/A</div>
+                    <div class="kpi-subtitle">Lowest pixel error</div>
+                </div>
+            </div>
+
+            <!-- Methods Availability List -->
+            <div class="card mt-24">
+                <h3>Registered Method Baselines</h3>
+                <div id="methods-status-grid" class="methods-grid">
+                    <!-- Dynamic rendering -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Method Leaderboard -->
+        <section id="leaderboard-section" class="tab-section hidden">
+            <div class="section-header">
+                <h2>Method Leaderboard</h2>
+                <p>Aggregate performance comparison across all active baselines</p>
+            </div>
+
+            <div class="card">
+                <div class="table-container">
+                    <table class="data-table" id="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Success Rate</th>
+                                <th>Mean RMSE (px)</th>
+                                <th>Median RMSE (px)</th>
+                                <th>Mean Inlier Ratio</th>
+                                <th>Mean Runtime (ms)</th>
+                                <th>Failures</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-tbody">
+                            <tr><td colspan="7" class="text-center text-muted">No benchmark data available yet.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Visualizations & Charts -->
+        <section id="visualizations-section" class="tab-section hidden">
+            <div class="section-header">
+                <h2>Performance Analytics</h2>
+                <p>Comparative metrics visualization charts</p>
+            </div>
+
+            <div class="charts-grid">
+                <div class="card">
+                    <h3>Success Rate by Method (%)</h3>
+                    <canvas id="chart-success-rate"></canvas>
+                </div>
+                <div class="card">
+                    <h3>Mean Runtime Comparison (ms)</h3>
+                    <canvas id="chart-runtime"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Pair Inspector -->
+        <section id="pair-inspector-section" class="tab-section hidden">
+            <div class="section-header">
+                <h2>Pair Level Inspector</h2>
+                <p>Inspect feature matches and warped registration overlays for individual image pairs</p>
+            </div>
+
+            <div class="card flex-row gap-16 align-center">
+                <label for="pair-select" class="form-label">Select Image Pair:</label>
+                <select id="pair-select" class="form-select">
+                    <option value="">-- No Pairs Discovered --</option>
+                </select>
+            </div>
+
+            <div id="pair-details-container" class="mt-24 hidden">
+                <div class="card">
+                    <h3 id="selected-pair-title">Pair Details</h3>
+                    <div class="pair-results-grid" id="pair-methods-grid">
+                        <!-- Dynamic rendering -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: ISRO Benchmark Paper Comparison -->
+        <section id="isro-section" class="tab-section hidden">
+            <div class="section-header">
+                <h2>ISRO Chandrayaan-2 Benchmark Comparison</h2>
+                <p>Comparison against published findings in <em>"Comparative Evaluation of Traditional and Deep Learning Feature Matching Algorithms using Chandrayaan-2 Lunar Data"</em> (Makharia et al., arXiv:2509.04775)</p>
+            </div>
+
+            <div class="card">
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Dataset Pair</th>
+                                <th>Method</th>
+                                <th>ISRO Status</th>
+                                <th>ISRO RMSE X</th>
+                                <th>Ours RMSE X</th>
+                                <th>ISRO Time (s)</th>
+                                <th>Ours Time (s)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="isro-table-body">
+                            <!-- Dynamic rendering -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- JS Logic -->
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

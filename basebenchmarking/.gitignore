@@ -1,0 +1,64 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Logs
+logs/
+*.log
+
+# Checkpoints / Model weights
+*.pt
+*.pth
+*.ckpt
+*.onnx
+
+# Local IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Ignore benchmark pair imagery (keep directory structure)
+data/raw/*
+!data/raw/.gitkeep
+data/pairs/*
+!data/pairs/.gitkeep
+data/ground_truth/*
+!data/ground_truth/.gitkeep
+
+# Ignore output results (keep directory structure)
+results/raw/*
+!results/raw/.gitkeep
+results/aggregated/*
+!results/aggregated/.gitkeep
+results/visualizations/*
+!results/visualizations/.gitkeep
