@@ -1,0 +1,17 @@
+# Registration Method Registry Config for Fine-Tuning & Cross-Modal Module
+
+enabled_methods:
+  - MatchAnything
+  - FineTuned_EfficientLoFTR
+  - FineTuned_RoMa
+
+parameters:
+  ransac_reproj_threshold: 3.0
+  image_width: 640
+  image_height: 480
+  confidence_threshold: 0.1
+
+checkpoints:
+  matchanything_weights: "zju-community/matchanything_eloftr"  # ~28MB
+  eloftr_checkpoint: "checkpoints/finetuned_eloftr_best.pth"
+  roma_checkpoint: "checkpoints/finetuned_roma_best.pth"
