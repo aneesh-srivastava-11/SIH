@@ -1,0 +1,132 @@
+﻿# ==============================================================================
+# Git Ignore for SIH / Chandrayaan-2 ISRO Benchmarking & Preprocessing Pipeline
+# ==============================================================================
+
+# --- Python & Bytecode ---
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+
+# --- Packaging, Distribution & Builds ---
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- Virtual Environments ---
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# --- Environment Variables & Secrets ---
+.env
+.env.*
+!.env.example
+
+# --- IDE, Editors & OS Files ---
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+
+# --- Logs & Monitoring ---
+logs/
+*.log
+
+# --- Model Weights, Checkpoints & Artifacts ---
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.weights
+*.bin
+weights/
+
+# --- Large Satellite Imagery, Data Cubes & Cached Arrays ---
+# PDS4 raw binary and image files (.img, .qub, etc.)
+*.img
+*.IMG
+*.qub
+*.QUB
+
+# Large numpy array dumps
+*.npy
+*.npz
+
+# GeoTIFF and raster imagery (large data files)
+*.tif
+*.tiff
+*.TIF
+*.TIFF
+
+# Scientific data formats
+*.h5
+*.hdf5
+*.nc
+
+# Compressed archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# --- Project Data Directories ---
+# Root data folder containing raw mission downloads & crops
+/data/
+
+# Parser data directories
+/PDS4_Parser/data/
+**/PDS4_Parser/data/
+
+# Preprocess data & accidentally nested paths
+/Preprocess/data/
+/Preprocess/basebenchmarking/
+
+# Basebenchmarking dataset folders (keep directory structure via .gitkeep)
+basebenchmarking/data/raw/*
+!basebenchmarking/data/raw/.gitkeep
+basebenchmarking/data/pairs/*
+!basebenchmarking/data/pairs/.gitkeep
+basebenchmarking/data/ground_truth/*
+!basebenchmarking/data/ground_truth/.gitkeep
+
+# Basebenchmarking benchmark results (keep directory structure via .gitkeep)
+basebenchmarking/results/raw/*
+!basebenchmarking/results/raw/.gitkeep
+basebenchmarking/results/aggregated/*
+!basebenchmarking/results/aggregated/.gitkeep
+basebenchmarking/results/visualizations/*
+!basebenchmarking/results/visualizations/.gitkeep
+results/
+
+# Temporary visual sanity checks
+sanity_check.png
+*_sanity_check.png
+
+# Keep test fixtures tracked
+!basebenchmarking/tests/fixtures/**
