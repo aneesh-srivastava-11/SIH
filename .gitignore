@@ -1,4 +1,4 @@
-﻿# ==============================================================================
+# ==============================================================================
 # Git Ignore for SIH / Chandrayaan-2 ISRO Benchmarking & Preprocessing Pipeline
 # ==============================================================================
 
@@ -96,8 +96,11 @@ weights/
 *.rar
 
 # --- Project Data Directories ---
-# Root data folder containing raw mission downloads & crops
-/data/
+# Root data folder containing raw mission downloads & crops (keep directory structure via .gitkeep)
+data/*
+!data/
+!data/*/
+!data/**/.gitkeep
 
 # Parser data directories
 /PDS4_Parser/data/
