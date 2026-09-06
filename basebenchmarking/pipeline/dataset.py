@@ -32,17 +32,18 @@ class DatasetLoader:
 
     def discover_pairs(self) -> List[ImagePair]:
         """
-        Scan `data/pairs/` for pairs.
+        Scan `data/cropped/` for pairs.
         Supports both:
         1. Flat naming: `reference1.png` + `target1.png`, `reference_001.jpg` + `target_001.jpg`
         2. Subfolder naming: `pair_001/reference.png` + `pair_001/target.png`
+           Also handles cases where a subfolder has exactly two supported files.
         """
         pairs: List[ImagePair] = []
 
         if not os.path.exists(self.pairs_dir):
             return pairs
 
-        # Strategy 1: Look for subdirectories (e.g. pair_001/reference.png)
+        # Strategy 1: Look for subdirectories (e.g. p1/, p3/)
         subdirs = [d for d in os.listdir(self.pairs_dir) if os.path.isdir(os.path.join(self.pairs_dir, d))]
         for sd in subdirs:
             pair_folder = os.path.join(self.pairs_dir, sd)
@@ -52,6 +53,7 @@ class DatasetLoader:
                 pairs.append(ImagePair(pair_id=sd, reference_path=ref_path, target_path=tgt_path, ground_truth_path=gt_path))
 
         # Strategy 2: Flat directory pattern (e.g. reference1.png / target1.png or ref1.png / tgt1.png)
+        # If no pairs found in subdirs, try flat directory
         if not pairs:
             pairs = self._discover_flat_pairs()
 
@@ -104,16 +106,27 @@ class DatasetLoader:
         """Find reference and target images inside a pair subfolder."""
         files = os.listdir(folder_path)
         ref_path, tgt_path = None, None
+        supported_files = []
 
         for f in files:
             ext = f.split(".")[-1].lower()
             if ext not in self.supported_formats:
                 continue
             lower = f.lower()
+            if "sanity_check" in lower:
+                continue
+            supported_files.append(f)
+            lower = f.lower()
             if "ref" in lower or "source" in lower:
                 ref_path = os.path.join(folder_path, f)
             elif "target" in lower or "tgt" in lower or "template" in lower:
                 tgt_path = os.path.join(folder_path, f)
+
+        # Fallback: if exactly two supported files, just use them sorted
+        if not (ref_path and tgt_path) and len(supported_files) == 2:
+            supported_files.sort()
+            ref_path = os.path.join(folder_path, supported_files[0])
+            tgt_path = os.path.join(folder_path, supported_files[1])
 
         return ref_path, tgt_path
 
@@ -132,22 +145,56 @@ class DatasetLoader:
 
     def load_image(self, image_path: str, convert_to_grayscale: bool = True) -> np.ndarray:
         """
-        Load an image from disk (supports PNG, JPG, TIFF).
+        Load an image from disk (supports PNG, JPG, TIFF, NPY, QUB, IMG).
         Optionally converts to grayscale and normalizes to 8-bit.
         """
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image not found at path: {image_path}")
 
-        img = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+        ext = image_path.split(".")[-1].lower()
+        if ext == "npy":
+            img = np.load(image_path)
+        elif ext in ["qub", "img", "tif", "tiff"]:
+            try:
+                import rasterio
+                with rasterio.open(image_path) as src:
+                    img = src.read(1) # Read the first band
+            except ImportError:
+                # Fallback to OpenCV if rasterio isn't installed
+                img = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+            except Exception as e:
+                raise ValueError(f"Failed to read raster file {image_path} with rasterio: {e}")
+        else:
+            img = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+            
         if img is None:
             raise ValueError(f"Failed to read image at path (corrupt or unsupported format): {image_path}")
 
         # Handle 16-bit or float images -> normalize to 8-bit uint8
         if img.dtype != np.uint8:
-            img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+            valid_mask = img > -30000
+            if np.any(valid_mask):
+                valid_pixels = img[valid_mask]
+                p_min = np.percentile(valid_pixels, 1)
+                p_max = np.percentile(valid_pixels, 99)
+                img = np.clip(img, p_min, p_max)
+                if p_max > p_min:
+                    img = ((img - p_min) / (p_max - p_min) * 255.0).astype(np.uint8)
+                else:
+                    img = np.zeros_like(img, dtype=np.uint8)
+            else:
+                img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
         if convert_to_grayscale and len(img.shape) == 3:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        # Apply max_dimension resizing to prevent OOM on massive satellite images
+        if hasattr(self.config, 'preprocessing') and self.config.preprocessing.max_dimension:
+            max_dim = self.config.preprocessing.max_dimension
+            h, w = img.shape[:2]
+            if h > max_dim or w > max_dim:
+                scale = max_dim / max(h, w)
+                img = cv2.resize(img, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
 
         return img
 

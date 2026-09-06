@@ -28,7 +28,7 @@ def main():
     parser.add_argument(
         "--data-dir",
         type=str,
-        default="data/rendered_pairs",
+        default="../data/rendered_pairs",
         help="Path to directory containing rendered reference/target pairs and GT JSON homographies."
     )
     parser.add_argument(

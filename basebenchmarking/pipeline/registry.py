@@ -81,12 +81,14 @@ class MethodRegistry:
         """Dynamically import and register method modules in the `methods` package."""
         modules = [
             ("sift", "methods.sift", "SIFTMethod"),
+            ("asift", "methods.asift", "ASIFTMethod"),
             ("akaze", "methods.akaze", "AKAZEMethod"),
             ("rift2", "methods.rift2", "RIFT2Method"),
             ("superpoint_lightglue", "methods.superpoint_lightglue", "SuperPointLightGlueMethod"),
             ("efficient_loftr", "methods.efficient_loftr", "EfficientLoFTRMethod"),
             ("arosics", "methods.arosics_method", "AROSICSMethod"),
         ]
+
 
         for key, mod_name, class_name in modules:
             try:

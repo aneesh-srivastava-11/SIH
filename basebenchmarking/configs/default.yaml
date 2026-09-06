@@ -1,8 +1,8 @@
 dataset:
-  pairs_dir: "data/pairs"
-  ground_truth_dir: "data/ground_truth"
-  raw_dir: "data/raw"
-  supported_formats: ["png", "jpg", "jpeg", "tif", "tiff"]
+  pairs_dir: "../data/cropped"
+  ground_truth_dir: "../data/ground_truth"
+  raw_dir: "../data/raw"
+  supported_formats: ["png", "jpg", "jpeg", "tif", "tiff", "npy", "qub", "img"]
   naming_pattern: "reference{n}"
 
 output:
@@ -14,6 +14,7 @@ output:
 methods:
   enabled:
     - sift
+    - asift
     - akaze
     - rift2
     - superpoint_lightglue
@@ -22,7 +23,7 @@ methods:
 
 preprocessing:
   convert_to_grayscale: true
-  max_dimension: null
+  max_dimension: 2048
   normalize_8bit: true
 
 matching:
