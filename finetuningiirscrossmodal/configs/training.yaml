@@ -1,0 +1,31 @@
+# Fine-Tuning Pipeline Configuration for Lunar Image Matchers
+# Target System: 8GB RAM, 6GB GPU (CUDA)
+
+training:
+  epochs: 50
+  batch_size: 2          # Set to 2 to guarantee stability under 6GB VRAM limit
+  learning_rate: 1e-4    # Initial AdamW learning rate
+  weight_decay: 1e-4     # L2 regularization coefficient
+  lr_scheduler: "cosine" # Cosine Annealing scheduler (eta_min=1e-6)
+  patience: 10           # Early stopping patience in epochs
+
+hardware_target:
+  ram_gb: 8
+  vram_gb: 6
+  device: "cuda"          # Fallback to "cpu" if CUDA is unavailable
+
+dataset:
+  rendered_pairs_dir: "data/rendered_pairs"
+  img_size: [480, 640]   # Height x Width (divisible by 8)
+  train_val_split: 0.8   # 80% train, 20% validation
+  seed: 42
+
+models:
+  eloftr:
+    freeze_backbone: true
+    transformer_dim: 128
+    checkpoint_output: "checkpoints/finetuned_eloftr_best.pth"
+  roma:
+    freeze_dinov2_backbone: true
+    feature_dim: 256
+    checkpoint_output: "checkpoints/finetuned_roma_best.pth"

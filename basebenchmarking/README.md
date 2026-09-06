@@ -27,16 +27,12 @@ Configuration variables available in `.env`:
 
 ## 2. Installation
 
-### Core Dependencies
+### Package Installation
+You can install the benchmarking platform and all its dependencies (including the deep learning models) as an editable package using `setup.py`:
+
 ```bash
 cd benchmarking
-pip install -r requirements.txt
-```
-
-### Optional Baseline Dependencies
-To enable PyTorch deep learning models (**SuperPoint+LightGlue**, **EfficientLoFTR**):
-```bash
-pip install -r requirements-optional.txt
+pip install -e .
 ```
 
 For **AROSICS** geospatial co-registration, install via Conda to resolve GDAL/PROJ dependencies:
@@ -54,15 +50,19 @@ git clone https://github.com/LJY-RS/RIFT2-multimodal-matching-rotation vendor/ri
 ## 3. Quick Start Guide
 
 ### Step 1: Run Baseline Benchmark
+If installed via `setup.py`, you can run the benchmark directly from the console:
 ```bash
-python -m pipeline.runner
+run-benchmark
 ```
+*(Alternatively: `python -m pipeline.runner`)*
 *(If `data/pairs/` has no images, it reports zero pairs and exits cleanly without errors.)*
 
 ### Step 2: Launch Web Dashboard
+To start the visualization dashboard:
 ```bash
-python -m dashboard.app
+run-dashboard
 ```
+*(Alternatively: `python -m dashboard.app`)*
 Open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
 
 ### Step 3: Run Unit Tests

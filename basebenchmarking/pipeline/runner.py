@@ -182,7 +182,7 @@ class BenchmarkRunner:
 
         logger.info("\nBaseline Methods Status:")
         for name, (avail, reason) in all_methods_status.items():
-            status_symbol = "✓" if avail else "✗"
+            status_symbol = "[OK]" if avail else "[X]"
             logger.info(f"  {status_symbol} {name.upper()}: {reason}")
 
         if not methods:

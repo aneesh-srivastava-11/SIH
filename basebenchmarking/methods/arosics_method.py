@@ -76,6 +76,7 @@ class AROSICSMethod(RegistrationMethod):
                 infer_time = (time.perf_counter() - t0) * 1000.0
 
                 success = bool(CR.success)
+                error_msg = None if success else "AROSICS COREG returned success=False"
                 dx = float(CR.x_shift_px) if hasattr(CR, "x_shift_px") else 0.0
                 dy = float(CR.y_shift_px) if hasattr(CR, "y_shift_px") else 0.0
                 ssim = float(CR.ssim_improved) if hasattr(CR, "ssim_improved") else None
@@ -109,6 +110,7 @@ class AROSICSMethod(RegistrationMethod):
                     runtime_ms=round(total_time, 2),
                     inference_time_ms=round(infer_time, 2),
                     device="cpu",
+                    error_message=error_msg,
                     metadata={
                         "shift_x_px": dx,
                         "shift_y_px": dy,

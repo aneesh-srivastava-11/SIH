@@ -126,6 +126,7 @@ class RIFT2Method(RegistrationMethod):
 
             total_time = (time.perf_counter() - start_time) * 1000.0
             success = final_H is not None and num_inliers >= config.evaluation.success_min_inliers
+            error_msg = None if success else f"Homography failed or insufficient inliers ({num_inliers} < {config.evaluation.success_min_inliers})"
 
             return RegistrationResult(
                 method=self.name,
@@ -139,6 +140,7 @@ class RIFT2Method(RegistrationMethod):
                 runtime_ms=round(total_time, 2),
                 preprocessing_time_ms=round(prep_time, 2),
                 device="cpu",
+                error_message=error_msg,
                 matches=match_coords,
                 metadata={"descriptor": "PhaseCongruency_MIM"},
             )
