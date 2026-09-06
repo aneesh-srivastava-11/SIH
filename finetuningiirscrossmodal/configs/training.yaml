@@ -15,7 +15,7 @@ hardware_target:
   device: "cuda"          # Fallback to "cpu" if CUDA is unavailable
 
 dataset:
-  rendered_pairs_dir: "data/rendered_pairs"
+  rendered_pairs_dir: "../data/rendered_pairs"
   img_size: [480, 640]   # Height x Width (divisible by 8)
   train_val_split: 0.8   # 80% train, 20% validation
   seed: 42

@@ -47,6 +47,31 @@ git clone https://github.com/LJY-RS/RIFT2-multimodal-matching-rotation vendor/ri
 
 ---
 
+## 2.1 Docker & Docker Compose Setup (Recommended)
+
+To run the complete benchmark (including **AROSICS** and **RIFT2** with all GDAL, PROJ, and GNU Octave dependencies isolated), use Docker Compose:
+
+### Run Everything (Benchmark + Dashboard)
+```bash
+docker compose up
+```
+
+- **Benchmark Runner Service**: Runs `pipeline.runner` across all dataset pairs and mounts output to `results/`.
+- **Dashboard Service**: Launches the web dashboard on **http://127.0.0.1:5000**.
+
+### Run Only Benchmark Runner
+```bash
+docker compose run --rm benchmark-runner
+```
+
+### Run Only Dashboard
+```bash
+docker compose up dashboard
+```
+
+
+---
+
 ## 3. Quick Start Guide
 
 ### Step 1: Run Baseline Benchmark

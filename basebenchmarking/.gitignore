@@ -47,13 +47,11 @@ logs/
 .idea/
 .DS_Store
 
-# Ignore benchmark pair imagery (keep directory structure)
-data/raw/*
-!data/raw/.gitkeep
-data/pairs/*
-!data/pairs/.gitkeep
-data/ground_truth/*
-!data/ground_truth/.gitkeep
+# Ignore documentation files
+README.md
+MODELS_README.md
+FAILURE_ANALYSIS.md
+REPRODUCIBILITY.md
 
 # Ignore output results (keep directory structure)
 results/raw/*

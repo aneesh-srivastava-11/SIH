@@ -9,6 +9,7 @@ import time
 import numpy as np
 import cv2
 
+
 from methods.base import RegistrationMethod, RegistrationResult
 
 

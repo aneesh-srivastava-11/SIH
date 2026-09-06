@@ -215,7 +215,18 @@ class BenchmarkRunner:
                     H_gt = self.dataset_loader.load_ground_truth(pair.ground_truth_path)
 
                     # Execute registration method
-                    result = method.run(ref_img, tgt_img, self.config, pair_id=pair.pair_id)
+                    method_to_run = method
+                    
+                    # Apply TiledMatcher to DL methods since they lose features on severe downscaling,
+                    # or if the image is exceptionally large.
+                    # Our preprocessing resizes images to max 2048 by default, so if they are at that cap,
+                    # we should tile them to preserve local features.
+                    is_dl_method = method.name in ["SuperPoint + LightGlue", "EfficientLoFTR"]
+                    if is_dl_method and self.config.preprocessing.max_dimension and self.config.preprocessing.max_dimension >= 2000:
+                        from methods.tiled_matcher import TiledMatcher
+                        method_to_run = TiledMatcher(method, grid_size=(3, 3))
+                        
+                    result = method_to_run.run(ref_img, tgt_img, self.config, pair_id=pair.pair_id)
 
                     # Enrich result with GT metrics if available
                     result = self.evaluator.evaluate_result(result, H_gt)
@@ -231,15 +242,15 @@ class BenchmarkRunner:
                         method_vis_dir = os.path.join(vis_out_dir, method.name.lower().replace(" ", "_"))
                         os.makedirs(method_vis_dir, exist_ok=True)
 
-                        vis_data = method.get_visualization_data()
+                        vis_data = method_to_run.get_visualization_data()
                         inlier_mask = vis_data.get("inlier_mask")
 
                         matches_img = VisualizationGenerator.render_matches(
-                            ref_img, tgt_img, method.get_matches(), inlier_mask, self.config.visualization.max_matches_drawn
+                            ref_img, tgt_img, method_to_run.get_matches(), inlier_mask, self.config.visualization.max_matches_drawn
                         )
                         cv2.imwrite(os.path.join(method_vis_dir, f"{pair.pair_id}_matches.png"), matches_img)
 
-                        overlay_img = VisualizationGenerator.render_overlay(ref_img, tgt_img, method.get_transform())
+                        overlay_img = VisualizationGenerator.render_overlay(ref_img, tgt_img, method_to_run.get_transform())
                         cv2.imwrite(os.path.join(method_vis_dir, f"{pair.pair_id}_overlay.png"), overlay_img)
 
                     status_str = "SUCCESS" if result.success else f"FAILED ({result.error_message or 'Unspecified'})"

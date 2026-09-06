@@ -75,6 +75,10 @@ class SuperPointLightGlueMethod(RegistrationMethod):
         min_matches = config.matching.min_matches
         ransac_thresh = config.ransac.reproj_threshold
 
+        pts0 = np.zeros((0, 2), dtype=np.float32)
+        pts1 = np.zeros((0, 2), dtype=np.float32)
+        infer_time = 0.0
+
         try:
             # Path A: Kornia Implementation
             try:
@@ -83,51 +87,52 @@ class SuperPointLightGlueMethod(RegistrationMethod):
 
                 t0 = time.perf_counter()
 
-                # Convert images to torch tensors [1, 1, H, W] in [0, 1]
                 t_ref = torch.from_numpy(ref_gray).float().unsqueeze(0).unsqueeze(0).to(device) / 255.0
                 t_tgt = torch.from_numpy(tgt_gray).float().unsqueeze(0).unsqueeze(0).to(device) / 255.0
 
-                extractor = KF.KeypointDetector(KF.SIFTDescriptor(8)).to(device)  # Fallback extractor if SuperPoint in Kornia
-                # Use LightGlueMatcher with SuperPoint
                 matcher = KF.LightGlueMatcher("superpoint").eval().to(device)
 
-                # Extracts features & matches
                 with torch.inference_mode():
-                    # High-level matching
-                    matches, scores = matcher({"image0": t_ref, "image1": t_tgt})
+                    dists, idxs = matcher(t_ref, t_tgt)
+                    if hasattr(matcher, "lafs0") and hasattr(matcher, "lafs1") and matcher.lafs0 is not None and len(idxs) > 0:
+                        kpts0 = KG.get_laf_center(matcher.lafs0)[0].cpu().numpy()
+                        kpts1 = KG.get_laf_center(matcher.lafs1)[0].cpu().numpy()
+                        idx0 = idxs[:, 0].cpu().numpy()
+                        idx1 = idxs[:, 1].cpu().numpy()
+                        pts0 = kpts0[idx0]
+                        pts1 = kpts1[idx1]
 
                 infer_time = (time.perf_counter() - t0) * 1000.0
 
             except Exception:
                 # Path B: Standalone LightGlue package
                 from lightglue import LightGlue, SuperPoint  # type: ignore
-                from lightglue.utils import numpy_to_torch  # type: ignore
+                from lightglue.utils import numpy_image_to_torch  # type: ignore
 
                 t0 = time.perf_counter()
 
                 extractor = SuperPoint(max_num_keypoints=2048).eval().to(device)
                 matcher = LightGlue(features="superpoint").eval().to(device)
 
-                t_ref = numpy_to_torch(ref_gray).unsqueeze(0).to(device) / 255.0
-                t_tgt = numpy_to_torch(tgt_gray).unsqueeze(0).to(device) / 255.0
+                t_ref = numpy_image_to_torch(ref_gray).unsqueeze(0).to(device)
+                t_tgt = numpy_image_to_torch(tgt_gray).unsqueeze(0).to(device)
 
                 with torch.inference_mode():
                     feats0 = extractor({"image": t_ref})
                     feats1 = extractor({"image": t_tgt})
                     matches01 = matcher({"image0": feats0, "image1": feats1})
 
-                    feats0, feats1, matches01 = [
-                        rb[0] for rb in [feats0, feats1, matches01]
-                    ]
-                    kpts0, kpts1 = feats0["keypoints"], feats1["keypoints"]
-                    matches_idx = matches01["matches"]
+                    kpts0 = feats0["keypoints"][0]
+                    kpts1 = feats1["keypoints"][0]
+                    matches_idx = matches01["matches"][0]
 
-                    pts0 = kpts0[matches_idx[:, 0]].cpu().numpy()
-                    pts1 = kpts1[matches_idx[:, 1]].cpu().numpy()
+                    if len(matches_idx) > 0:
+                        pts0 = kpts0[matches_idx[:, 0]].cpu().numpy()
+                        pts1 = kpts1[matches_idx[:, 1]].cpu().numpy()
 
                 infer_time = (time.perf_counter() - t0) * 1000.0
 
-            num_matches = len(pts0) if "pts0" in locals() else 0
+            num_matches = len(pts0)
 
             if num_matches < min_matches:
                 total_time = (time.perf_counter() - start_time) * 1000.0
@@ -145,6 +150,7 @@ class SuperPointLightGlueMethod(RegistrationMethod):
                 )
 
             # RANSAC Homography verification
+
             src_pts = np.float32(pts0).reshape(-1, 1, 2)
             dst_pts = np.float32(pts1).reshape(-1, 1, 2)
             H, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, ransac_thresh)

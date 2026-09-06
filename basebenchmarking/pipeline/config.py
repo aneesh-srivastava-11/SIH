@@ -10,9 +10,9 @@ import yaml
 
 @dataclass
 class DatasetConfig:
-    pairs_dir: str = "data/pairs"
-    ground_truth_dir: str = "data/ground_truth"
-    raw_dir: str = "data/raw"
+    pairs_dir: str = "../data/cropped"
+    ground_truth_dir: str = "../data/ground_truth"
+    raw_dir: str = "../data/raw"
     supported_formats: List[str] = field(default_factory=lambda: ["png", "jpg", "jpeg", "tif", "tiff"])
     naming_pattern: str = "reference{n}"
 
@@ -77,7 +77,7 @@ class LoggingConfig:
 class BenchmarkConfig:
     dataset: DatasetConfig = field(default_factory=DatasetConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
-    enabled_methods: List[str] = field(default_factory=lambda: ["sift", "akaze", "rift2", "superpoint_lightglue", "efficient_loftr", "arosics"])
+    enabled_methods: List[str] = field(default_factory=lambda: ["sift", "asift", "akaze", "rift2", "superpoint_lightglue", "efficient_loftr", "arosics"])
     preprocessing: PreprocessingConfig = field(default_factory=PreprocessingConfig)
     matching: MatchingConfig = field(default_factory=MatchingConfig)
     ransac: RansacConfig = field(default_factory=RansacConfig)
@@ -128,13 +128,25 @@ class BenchmarkConfig:
         # Environment variable overrides
         if os.environ.get("BENCHMARK_DATA_DIR"):
             dataset_cfg["pairs_dir"] = os.environ["BENCHMARK_DATA_DIR"]
+        if os.environ.get("BENCHMARK_GT_DIR"):
+            dataset_cfg["ground_truth_dir"] = os.environ["BENCHMARK_GT_DIR"]
         if os.environ.get("BENCHMARK_OUTPUT_DIR"):
             output_cfg["results_dir"] = os.environ["BENCHMARK_OUTPUT_DIR"]
+
+        # Sibling directory resolution fallback if paths don't exist under base_dir
+        for path_key, default_val in [("pairs_dir", "../data/cropped"), ("ground_truth_dir", "../data/ground_truth")]:
+            rel_path = dataset_cfg.get(path_key, default_val)
+            abs_path = os.path.abspath(os.path.join(base_dir, rel_path))
+            sibling_path = os.path.abspath(os.path.join(base_dir, "..", rel_path))
+            if not os.path.exists(abs_path) and os.path.exists(sibling_path):
+                dataset_cfg[path_key] = sibling_path
+            else:
+                dataset_cfg[path_key] = abs_path
 
         config = cls(
             dataset=DatasetConfig(**dataset_cfg),
             output=OutputConfig(**output_cfg),
-            enabled_methods=methods_cfg.get("enabled", ["sift", "akaze", "rift2", "superpoint_lightglue", "efficient_loftr", "arosics"]),
+            enabled_methods=methods_cfg.get("enabled", ["sift", "asift", "akaze", "rift2", "superpoint_lightglue", "efficient_loftr", "arosics"]),
             preprocessing=PreprocessingConfig(**prep_cfg),
             matching=MatchingConfig(**match_cfg),
             ransac=RansacConfig(**ransac_cfg),

@@ -2,6 +2,7 @@
 
 from methods.base import RegistrationMethod, RegistrationResult
 from methods.sift import SIFTMethod
+from methods.asift import ASIFTMethod
 from methods.akaze import AKAZEMethod
 from methods.rift2 import RIFT2Method
 from methods.superpoint_lightglue import SuperPointLightGlueMethod
@@ -12,9 +13,11 @@ __all__ = [
     "RegistrationMethod",
     "RegistrationResult",
     "SIFTMethod",
+    "ASIFTMethod",
     "AKAZEMethod",
     "RIFT2Method",
     "SuperPointLightGlueMethod",
     "EfficientLoFTRMethod",
     "AROSICSMethod",
 ]
+

@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  benchmark-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: image_registration_benchmark_runner
+    working_dir: /app
+    environment:
+      - BENCHMARK_DATA_DIR=/data/cropped
+      - BENCHMARK_GT_DIR=/data/ground_truth
+      - BENCHMARK_OUTPUT_DIR=/app/results
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+      - ../data:/data
+    command: ["/bin/bash", "-c", "PYTHONPATH=/app conda run --no-capture-output -n benchmark_env python -m pipeline.runner"]
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: image_registration_dashboard
+    ports:
+      - "5000:5000"
+    environment:
+      - BENCHMARK_OUTPUT_DIR=/app/results
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+      - ./results:/app/results
+    command: ["/bin/bash", "-c", "PYTHONPATH=/app conda run --no-capture-output -n benchmark_env python -m dashboard.app"]
+    depends_on:
+      - benchmark-runner

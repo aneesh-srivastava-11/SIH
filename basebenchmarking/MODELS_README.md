@@ -51,9 +51,35 @@ All models inherit from `RegistrationMethod` defined in `methods/base.py`. They 
 - **Type:** Geospatial phase-correlation.
 - **Code Flow:** Operates on geographic metadata if available, using phase correlation on global and local image levels to compute spatial shifts. Best for remote sensing images. Requires `arosics` and `rasterio` libraries.
 
+### 7. ASIFT (`methods/asift.py`)
+- **Type:** Traditional Affine-simulated SIFT feature extractor (Morel & Yu 2009).
+- **Code Flow:** Uses `cv2.AffineFeature.create(cv2.SIFT_create())` to simulate a range of camera tilt angles and rotations prior to SIFT keypoint detection and description. Uses FLANN matcher with Lowe's ratio test (0.75) and RANSAC homography estimation (`cv2.findHomography`).
+
 ---
 
-## 3. How to Run the Dashboard
+## 3. Model Checkpoint Provenance
+
+The deep learning models rely on pretrained weights loaded deterministically:
+
+| Model | Checkpoint Source | Repository / Hub | Device |
+|---|---|---|---|
+| **SuperPoint** | `superpoint_v1.pth` | Kornia / `cvg/LightGlue` | PyTorch (`cuda` / `cpu`) |
+| **LightGlue** | `superpoint_lightglue.pth` | Kornia / `cvg/LightGlue` | PyTorch (`cuda` / `cpu`) |
+| **EfficientLoFTR** | `zju-community/efficientloftr` | Hugging Face Hub | PyTorch (`cuda` / `cpu`) |
+
+---
+
+## 4. Runtime Measurement Methodology
+
+Execution runtime is measured using high-precision wall-clock timers (`time.perf_counter()`):
+- **Total Runtime (`runtime_ms`)**: Measures the complete `run()` execution from grayscale conversion to final homography matrix calculation.
+- **Preprocessing Time (`preprocessing_time_ms`)**: Measures keypoint detection / feature extraction duration.
+- **Inference Time (`inference_time_ms`)**: Measures descriptor matching / GNN forward pass execution.
+- **Warmup & Execution Context**: Execution runs on isolated CPU/GPU threads with device configuration (`config.device.prefer_gpu`).
+
+---
+
+## 5. How to Run the Dashboard
 
 The project includes a web-based dashboard built on Flask to visualize the results of the models on your dataset.
 
@@ -83,3 +109,4 @@ Open your web browser and go to:
 - **Leaderboard Tab:** Shows average RMSE, success rates, and runtimes across the dataset for each method.
 - **Detailed Results Tab:** View specific matching visualizations (inlier/outlier lines) for individual image pairs.
 - **ISRO Benchmark Tab:** Compare your local run against published baseline data.
+
