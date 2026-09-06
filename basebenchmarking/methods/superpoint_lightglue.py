@@ -164,6 +164,7 @@ class SuperPointLightGlueMethod(RegistrationMethod):
 
             total_time = (time.perf_counter() - start_time) * 1000.0
             success = H is not None and num_inliers >= config.evaluation.success_min_inliers and inlier_ratio >= config.evaluation.success_min_inlier_ratio
+            error_msg = None if success else f"Homography failed or insufficient inliers ({num_inliers} < {config.evaluation.success_min_inliers})"
 
             return RegistrationResult(
                 method=self.name,
@@ -177,6 +178,7 @@ class SuperPointLightGlueMethod(RegistrationMethod):
                 runtime_ms=round(total_time, 2),
                 inference_time_ms=round(infer_time, 2),
                 device=device_str,
+                error_message=error_msg,
                 matches=match_coords,
                 metadata={"extractor": "SuperPoint", "matcher": "LightGlue", "device": device_str},
             )

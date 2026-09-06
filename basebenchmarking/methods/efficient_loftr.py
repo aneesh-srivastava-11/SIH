@@ -30,7 +30,7 @@ class EfficientLoFTRMethod(RegistrationMethod):
         try:
             import torch  # type: ignore
             try:
-                import transformers  # type: ignore
+                from transformers import EfficientLoFTRForKeypointMatching  # type: ignore
                 return True, "Available (via Hugging Face transformers)"
             except ImportError:
                 pass
@@ -65,45 +65,56 @@ class EfficientLoFTRMethod(RegistrationMethod):
         device_str = "cuda" if (config.device.prefer_gpu and torch.cuda.is_available()) else "cpu"
         device = torch.device(device_str)
 
-        ref_gray = reference_image if len(reference_image.shape) == 2 else cv2.cvtColor(reference_image, cv2.COLOR_BGR2GRAY)
-        tgt_gray = target_image if len(target_image.shape) == 2 else cv2.cvtColor(target_image, cv2.COLOR_BGR2GRAY)
-
         min_matches = config.matching.min_matches
         ransac_thresh = config.ransac.reproj_threshold
 
         try:
             t0 = time.perf_counter()
 
-            # Resize images to multiple of 8/16 if required by LoFTR architecture
-            h1, w1 = ref_gray.shape
-            h2, w2 = tgt_gray.shape
-
-            # Target dims divisible by 8
-            new_w1, new_h1 = (w1 // 8) * 8, (h1 // 8) * 8
-            new_w2, new_h2 = (w2 // 8) * 8, (h2 // 8) * 8
-
-            ref_resized = cv2.resize(ref_gray, (new_w1, new_h1)) if (new_w1 != w1 or new_h1 != h1) else ref_gray
-            tgt_resized = cv2.resize(tgt_gray, (new_w2, new_h2)) if (new_w2 != w2 or new_h2 != h2) else tgt_gray
-
             # Path A: Hugging Face transformers
             try:
-                from transformers import AutoModel, AutoImageProcessor  # type: ignore
+                from transformers import EfficientLoFTRForKeypointMatching, AutoImageProcessor  # type: ignore
+
+                ref_rgb = reference_image if len(reference_image.shape) == 3 else cv2.cvtColor(reference_image, cv2.COLOR_GRAY2RGB)
+                if len(reference_image.shape) == 3:
+                    ref_rgb = cv2.cvtColor(ref_rgb, cv2.COLOR_BGR2RGB)
+                    
+                tgt_rgb = target_image if len(target_image.shape) == 3 else cv2.cvtColor(target_image, cv2.COLOR_GRAY2RGB)
+                if len(target_image.shape) == 3:
+                    tgt_rgb = cv2.cvtColor(tgt_rgb, cv2.COLOR_BGR2RGB)
 
                 # Try loading pretrained EfficientLoFTR from Hugging Face hub
                 model_id = "zju-community/efficientloftr"
-                processor = AutoImageProcessor.from_pretrained(model_id, trust_remote_code=True)
-                model = AutoModel.from_pretrained(model_id, trust_remote_code=True).eval().to(device)
+                processor = AutoImageProcessor.from_pretrained(model_id)
+                model = EfficientLoFTRForKeypointMatching.from_pretrained(model_id).eval().to(device)
 
-                inputs = processor(images=[ref_resized, tgt_resized], return_tensors="pt").to(device)
+                inputs = processor(images=[ref_rgb, tgt_rgb], return_tensors="pt").to(device)
                 with torch.inference_mode():
                     outputs = model(**inputs)
 
-                pts0 = outputs.keypoints0.cpu().numpy()
-                pts1 = outputs.keypoints1.cpu().numpy()
+                h1, w1 = reference_image.shape[:2]
+                h2, w2 = target_image.shape[:2]
+                
+                res = processor.post_process_keypoint_matching(outputs, [[(h1, w1), (h2, w2)]], threshold=0.2)[0]
+                
+                pts0 = res["keypoints0"].cpu().numpy()
+                pts1 = res["keypoints1"].cpu().numpy()
 
-            except Exception:
+            except Exception as e:
                 # Path B: Local src.loftr repository fallback
                 from src.loftr import LoFTR, full_default_cfg  # type: ignore
+                
+                ref_gray = reference_image if len(reference_image.shape) == 2 else cv2.cvtColor(reference_image, cv2.COLOR_BGR2GRAY)
+                tgt_gray = target_image if len(target_image.shape) == 2 else cv2.cvtColor(target_image, cv2.COLOR_BGR2GRAY)
+                h1, w1 = ref_gray.shape
+                h2, w2 = tgt_gray.shape
+
+                # Target dims divisible by 8
+                new_w1, new_h1 = (w1 // 8) * 8, (h1 // 8) * 8
+                new_w2, new_h2 = (w2 // 8) * 8, (h2 // 8) * 8
+
+                ref_resized = cv2.resize(ref_gray, (new_w1, new_h1)) if (new_w1 != w1 or new_h1 != h1) else ref_gray
+                tgt_resized = cv2.resize(tgt_gray, (new_w2, new_h2)) if (new_w2 != w2 or new_h2 != h2) else tgt_gray
 
                 matcher = LoFTR(config=full_default_cfg).eval().to(device)
 
@@ -115,19 +126,20 @@ class EfficientLoFTRMethod(RegistrationMethod):
                     matcher(batch)
                     pts0 = batch["mkpts0_f"].cpu().numpy()
                     pts1 = batch["mkpts1_f"].cpu().numpy()
+                    
+                num_matches = len(pts0) if pts0 is not None else 0
+                # Scale match coordinates back to original image dimensions if resized
+                if num_matches > 0 and (new_w1 != w1 or new_h1 != h1 or new_w2 != w2 or new_h2 != h2):
+                    scale_x1, scale_y1 = w1 / new_w1, h1 / new_h1
+                    scale_x2, scale_y2 = w2 / new_w2, h2 / new_h2
+
+                    pts0[:, 0] *= scale_x1
+                    pts0[:, 1] *= scale_y1
+                    pts1[:, 0] *= scale_x2
+                    pts1[:, 1] *= scale_y2
 
             infer_time = (time.perf_counter() - t0) * 1000.0
             num_matches = len(pts0) if pts0 is not None else 0
-
-            # Scale match coordinates back to original image dimensions if resized
-            if num_matches > 0 and (new_w1 != w1 or new_h1 != h1 or new_w2 != w2 or new_h2 != h2):
-                scale_x1, scale_y1 = w1 / new_w1, h1 / new_h1
-                scale_x2, scale_y2 = w2 / new_w2, h2 / new_h2
-
-                pts0[:, 0] *= scale_x1
-                pts0[:, 1] *= scale_y1
-                pts1[:, 0] *= scale_x2
-                pts1[:, 1] *= scale_y2
 
             if num_matches < min_matches:
                 total_time = (time.perf_counter() - start_time) * 1000.0
@@ -164,6 +176,7 @@ class EfficientLoFTRMethod(RegistrationMethod):
 
             total_time = (time.perf_counter() - start_time) * 1000.0
             success = H is not None and num_inliers >= config.evaluation.success_min_inliers and inlier_ratio >= config.evaluation.success_min_inlier_ratio
+            error_msg = None if success else f"Homography failed or insufficient inliers ({num_inliers} < {config.evaluation.success_min_inliers})"
 
             return RegistrationResult(
                 method=self.name,
@@ -177,6 +190,7 @@ class EfficientLoFTRMethod(RegistrationMethod):
                 runtime_ms=round(total_time, 2),
                 inference_time_ms=round(infer_time, 2),
                 device=device_str,
+                error_message=error_msg,
                 matches=match_coords,
                 metadata={"model": "EfficientLoFTR", "dense_matching": True, "device": device_str},
             )
