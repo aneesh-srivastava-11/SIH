@@ -1,0 +1,32 @@
+# Dataset and outputs
+dataset_output/
+*.png
+*.json
+*.npz
+
+# Raw DEM files
+*.IMG
+*.LBL
+*.tif
+*.tiff
+
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Virtual environments
+venv/
+env/
+.env
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Agent files (exclude internal agent caches, but keep Artifacts/ docs)
+.gemini/
