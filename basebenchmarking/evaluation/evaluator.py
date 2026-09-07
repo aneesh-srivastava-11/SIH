@@ -18,7 +18,12 @@ class BenchmarkEvaluator:
     def __init__(self, config: Any):
         self.config = config
 
-    def evaluate_result(self, result: RegistrationResult, H_gt: Optional[np.ndarray]) -> RegistrationResult:
+    def evaluate_result(
+        self,
+        result: RegistrationResult,
+        H_gt: Optional[np.ndarray],
+        image_shape: Optional[Tuple[int, int]] = None,
+    ) -> RegistrationResult:
         """
         Enrich a RegistrationResult with ground truth metrics if ground truth homography is available.
         Never fabricates metrics if H_gt is None.
@@ -33,8 +38,8 @@ class BenchmarkEvaluator:
             return result
 
         H_pred = np.array(result.transform, dtype=np.float64)
-        rmse_overall, rmse_x, rmse_y = compute_homography_rmse(H_pred, H_gt)
-        mean_err, median_err, max_err = compute_reprojection_errors(H_pred, H_gt)
+        rmse_overall, rmse_x, rmse_y = compute_homography_rmse(H_pred, H_gt, image_shape=image_shape)
+        mean_err, median_err, max_err = compute_reprojection_errors(H_pred, H_gt, image_shape=image_shape)
 
         result.rmse = round(rmse_overall, 4) if rmse_overall is not None else None
         result.rmse_x = round(rmse_x, 4) if rmse_x is not None else None

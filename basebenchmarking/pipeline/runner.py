@@ -217,19 +217,23 @@ class BenchmarkRunner:
                     # Execute registration method
                     method_to_run = method
                     
-                    # Apply TiledMatcher to DL methods since they lose features on severe downscaling,
-                    # or if the image is exceptionally large.
-                    # Our preprocessing resizes images to max 2048 by default, so if they are at that cap,
-                    # we should tile them to preserve local features.
+                    # Apply TiledMatcher to DL methods if enabled in config
+                    tiling_cfg = getattr(self.config, 'tiling', None)
+                    tiling_enabled = getattr(tiling_cfg, 'enabled_for_dl', True) if tiling_cfg else True
+                    min_dim_thresh = getattr(tiling_cfg, 'min_dimension_threshold', 2000) if tiling_cfg else 2000
+                    grid_sz = tuple(getattr(tiling_cfg, 'grid_size', (3, 3))) if tiling_cfg else (3, 3)
+
                     is_dl_method = method.name in ["SuperPoint + LightGlue", "EfficientLoFTR"]
-                    if is_dl_method and self.config.preprocessing.max_dimension and self.config.preprocessing.max_dimension >= 2000:
+                    if (tiling_enabled and is_dl_method and self.config.preprocessing.max_dimension
+                            and self.config.preprocessing.max_dimension >= min_dim_thresh):
                         from methods.tiled_matcher import TiledMatcher
-                        method_to_run = TiledMatcher(method, grid_size=(3, 3))
+                        method_to_run = TiledMatcher(method, grid_size=grid_sz)
                         
                     result = method_to_run.run(ref_img, tgt_img, self.config, pair_id=pair.pair_id)
 
                     # Enrich result with GT metrics if available
-                    result = self.evaluator.evaluate_result(result, H_gt)
+                    img_shape = ref_img.shape[:2] if ref_img is not None else None
+                    result = self.evaluator.evaluate_result(result, H_gt, image_shape=img_shape)
                     all_results.append(result)
 
                     # Save per-pair raw JSON result

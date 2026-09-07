@@ -82,8 +82,9 @@ class RIFT2Method(RegistrationMethod):
                 fast = cv2.FastFeatureDetector_create(threshold=1, nonmaxSuppression=True)
                 kp = fast.detect(m_uint8, None)
                 
-                # Sort by response and take top 5000
-                kp = sorted(kp, key=lambda x: x.response, reverse=True)[:5000]
+                # Sort by response and take top keypoints from config
+                max_kps = getattr(config.matching, 'max_keypoints', 5000) if hasattr(config, 'matching') else 5000
+                kp = sorted(kp, key=lambda x: x.response, reverse=True)[:max_kps]
                 kpts_loc = np.array([[k.pt[0], k.pt[1]] for k in kp]).T # 2 x N
                 
                 if kpts_loc.size == 0:
@@ -117,10 +118,11 @@ class RIFT2Method(RegistrationMethod):
             matcher = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)
             raw_matches = matcher.knnMatch(des_ref, des_tgt, k=2)
             
-            # Ratio test (RIFT paper uses max ratio 1.0 or similar but let's do 0.8-0.9)
+            # Ratio test
+            ratio_thresh = getattr(config.matching, 'ratio_test_threshold', 0.95) if hasattr(config, 'matching') else 0.95
             good_matches = []
             for match in raw_matches:
-                if len(match) == 2 and match[0].distance < 0.95 * match[1].distance:
+                if len(match) == 2 and match[0].distance < ratio_thresh * match[1].distance:
                     good_matches.append(match[0])
             
             # If crossCheck is True, or if we use ratio test, we get good_matches

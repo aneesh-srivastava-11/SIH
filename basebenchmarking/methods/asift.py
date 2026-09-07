@@ -93,10 +93,12 @@ class ASIFTMethod(RegistrationMethod):
                 error_message=f"Insufficient keypoints detected by ASIFT (ref: {num_kp_ref}, tgt: {num_kp_tgt}, min: {min_matches})",
             )
 
-        # FLANN Matcher
+        # FLANN Matcher (params from config)
         FLANN_INDEX_KDTREE = 1
-        index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-        search_params = dict(checks=50)
+        flann_trees = getattr(config.matching, 'flann_trees', 5) if hasattr(config, 'matching') else 5
+        flann_checks = getattr(config.matching, 'flann_checks', 50) if hasattr(config, 'matching') else 50
+        index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=flann_trees)
+        search_params = dict(checks=flann_checks)
         flann = cv2.FlannBasedMatcher(index_params, search_params)
 
         t1 = time.perf_counter()

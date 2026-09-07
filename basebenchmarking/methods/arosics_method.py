@@ -12,6 +12,11 @@ import cv2
 
 from methods.base import RegistrationMethod, RegistrationResult
 
+# Default window size (pixels) for FFT phase correlation search
+DEFAULT_WINDOW_SIZE: Tuple[int, int] = (256, 256)
+# Maximum expected spatial shift (pixels) in reference vs target imagery
+DEFAULT_MAX_SHIFT: int = 50
+
 
 class AROSICSMethod(RegistrationMethod):
     """
@@ -71,7 +76,7 @@ class AROSICSMethod(RegistrationMethod):
                 self._write_dummy_geotiff(tgt_path, tgt_gray)
 
                 # Initialize AROSICS COREG shift calculation
-                CR = arosics.COREG(ref_path, tgt_path, wp=(0, 0), ws=(256, 256), max_shift=50)
+                CR = arosics.COREG(ref_path, tgt_path, wp=(0, 0), ws=DEFAULT_WINDOW_SIZE, max_shift=DEFAULT_MAX_SHIFT)
                 CR.calculate_spatial_shifts()
 
                 infer_time = (time.perf_counter() - t0) * 1000.0

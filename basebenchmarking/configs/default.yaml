@@ -29,6 +29,10 @@ preprocessing:
 matching:
   ratio_test_threshold: 0.75
   min_matches: 4
+  flann_trees: 5
+  flann_checks: 50
+  max_keypoints: 2048
+  confidence_threshold: 0.2
 
 ransac:
   method: "RANSAC"
@@ -54,3 +58,8 @@ device:
 logging:
   level: "INFO"
   log_dir: "logs"
+
+tiling:
+  enabled_for_dl: true
+  grid_size: [3, 3]
+  min_dimension_threshold: 2000

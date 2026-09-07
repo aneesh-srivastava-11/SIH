@@ -88,6 +88,10 @@ def test_asift_execution_on_synthetic_fixture(synthetic_pair_paths):
 
 
 def test_akaze_execution_on_synthetic_fixture(synthetic_pair_paths):
+    avail, reason = AKAZEMethod.is_available()
+    if not avail:
+        pytest.skip(f"AKAZE unavailable: {reason}")
+
     ref_path, tgt_path, gt_path = synthetic_pair_paths
     from pipeline.dataset import DatasetLoader
 

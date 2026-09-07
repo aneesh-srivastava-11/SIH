@@ -84,7 +84,7 @@ class EfficientLoFTRMethod(RegistrationMethod):
                     tgt_rgb = cv2.cvtColor(tgt_rgb, cv2.COLOR_BGR2RGB)
 
                 # Try loading pretrained EfficientLoFTR from Hugging Face hub
-                model_id = "zju-community/efficientloftr"
+                model_id = os.environ.get("ELOFTR_MODEL_ID", "zju-community/efficientloftr")
                 processor = AutoImageProcessor.from_pretrained(model_id)
                 model = EfficientLoFTRForKeypointMatching.from_pretrained(model_id).eval().to(device)
 
@@ -95,7 +95,8 @@ class EfficientLoFTRMethod(RegistrationMethod):
                 h1, w1 = reference_image.shape[:2]
                 h2, w2 = target_image.shape[:2]
                 
-                res = processor.post_process_keypoint_matching(outputs, [[(h1, w1), (h2, w2)]], threshold=0.2)[0]
+                conf_thresh = getattr(config.matching, 'confidence_threshold', 0.2) if hasattr(config, 'matching') else 0.2
+                res = processor.post_process_keypoint_matching(outputs, [[(h1, w1), (h2, w2)]], threshold=conf_thresh)[0]
                 
                 pts0 = res["keypoints0"].cpu().numpy()
                 pts1 = res["keypoints1"].cpu().numpy()

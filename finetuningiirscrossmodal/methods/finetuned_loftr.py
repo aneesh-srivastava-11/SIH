@@ -15,6 +15,11 @@ import torch
 
 from finetuningiirscrossmodal.methods.base import RegistrationMethod, RegistrationResult
 
+# LoFTR coarse grid feature downsampling stride and center offset
+LOFTR_GRID_STRIDE: int = 8
+LOFTR_GRID_OFFSET: int = 4
+DEFAULT_CONFIDENCE_THRESHOLD: float = 0.1
+
 
 class FineTunedLoFTRMethod(RegistrationMethod):
     """
@@ -108,7 +113,10 @@ class FineTunedLoFTRMethod(RegistrationMethod):
 
         # Inference
         t0_inf = time.time()
-        matches_resized, num_ref_kp, num_tgt_kp = self._infer_matches(ref_resized, tgt_resized)
+        conf_thresh = getattr(config, "confidence_threshold", DEFAULT_CONFIDENCE_THRESHOLD)
+        matches_resized, num_ref_kp, num_tgt_kp = self._infer_matches(
+            ref_resized, tgt_resized, confidence_threshold=conf_thresh
+        )
         inf_time_ms = (time.time() - t0_inf) * 1000.0
 
         if matches_resized is None or len(matches_resized) < 4:
@@ -216,7 +224,12 @@ class FineTunedLoFTRMethod(RegistrationMethod):
             metadata={"checkpoint_path": str(self.checkpoint_path)},
         )
 
-    def _infer_matches(self, ref_gray: np.ndarray, tgt_gray: np.ndarray) -> Tuple[Optional[np.ndarray], int, int]:
+    def _infer_matches(
+        self,
+        ref_gray: np.ndarray,
+        tgt_gray: np.ndarray,
+        confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD,
+    ) -> Tuple[Optional[np.ndarray], int, int]:
         try:
             ref_t = torch.from_numpy(ref_gray).float().unsqueeze(0).unsqueeze(0) / 255.0
             tgt_t = torch.from_numpy(tgt_gray).float().unsqueeze(0).unsqueeze(0) / 255.0
@@ -234,13 +247,17 @@ class FineTunedLoFTRMethod(RegistrationMethod):
             H8 = out.get("grid_h", int(np.sqrt(N)))
             W8 = out.get("grid_w", int(np.sqrt(N)))
 
-            grid_y, grid_x = np.meshgrid(np.arange(H8) * 8 + 4, np.arange(W8) * 8 + 4, indexing="ij")
+            grid_y, grid_x = np.meshgrid(
+                np.arange(H8) * LOFTR_GRID_STRIDE + LOFTR_GRID_OFFSET,
+                np.arange(W8) * LOFTR_GRID_STRIDE + LOFTR_GRID_OFFSET,
+                indexing="ij",
+            )
             pts_ref = np.column_stack([grid_x.ravel(), grid_y.ravel()])
 
             best_idx = np.argmax(conf_matrix, axis=1)
             max_conf = np.max(conf_matrix, axis=1)
 
-            valid_mask = max_conf > 0.1
+            valid_mask = max_conf > confidence_threshold
             for i in np.where(valid_mask)[0]:
                 j = best_idx[i]
                 pt0 = pts_ref[i]

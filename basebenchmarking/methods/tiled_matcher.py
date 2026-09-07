@@ -10,6 +10,10 @@ import time
 
 from methods.base import RegistrationMethod, RegistrationResult
 
+# Minimum width or height in pixels for a valid tile to attempt feature extraction
+MIN_TILE_SIZE: int = 10
+
+
 class TiledMatcher(RegistrationMethod):
     """
     A wrapper that takes any RegistrationMethod and applies it in a patch-based (tiled) manner.
@@ -55,7 +59,8 @@ class TiledMatcher(RegistrationMethod):
                 tgt_tile = target_image[tgt_y1:tgt_y2, tgt_x1:tgt_x2]
                 
                 # Skip if tiles are too small
-                if ref_tile.shape[0] < 10 or ref_tile.shape[1] < 10 or tgt_tile.shape[0] < 10 or tgt_tile.shape[1] < 10:
+                if (ref_tile.shape[0] < MIN_TILE_SIZE or ref_tile.shape[1] < MIN_TILE_SIZE or
+                        tgt_tile.shape[0] < MIN_TILE_SIZE or tgt_tile.shape[1] < MIN_TILE_SIZE):
                     continue
                     
                 # Run base method on tiles

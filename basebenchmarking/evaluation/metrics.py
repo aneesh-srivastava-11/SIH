@@ -6,6 +6,10 @@ from typing import Optional, List, Tuple, Dict, Any
 import numpy as np
 
 
+# Fallback default image shape if caller does not provide dimensions
+DEFAULT_IMAGE_SHAPE: Tuple[int, int] = (512, 512)
+
+
 def compute_inlier_ratio(num_inliers: Optional[int], num_matches: Optional[int]) -> Optional[float]:
     """Calculate ratio of inliers to candidate matches."""
     if num_inliers is None or num_matches is None or num_matches == 0:
@@ -16,7 +20,7 @@ def compute_inlier_ratio(num_inliers: Optional[int], num_matches: Optional[int])
 def compute_homography_rmse(
     H_pred: Optional[np.ndarray],
     H_gt: Optional[np.ndarray],
-    image_shape: Tuple[int, int] = (512, 512),
+    image_shape: Optional[Tuple[int, int]] = None,
     grid_size: int = 20,
 ) -> Tuple[Optional[float], Optional[float], Optional[float]]:
     """
@@ -35,6 +39,9 @@ def compute_homography_rmse(
     if H_pred.shape != (3, 3) or H_gt.shape != (3, 3):
         return None, None, None
 
+    if image_shape is None:
+        image_shape = DEFAULT_IMAGE_SHAPE
+
     h, w = image_shape
     xs = np.linspace(0, w - 1, grid_size)
     ys = np.linspace(0, h - 1, grid_size)
@@ -42,11 +49,11 @@ def compute_homography_rmse(
     pts = np.vstack([grid_x.ravel(), grid_y.ravel(), np.ones(grid_x.size)])  # (3, N)
 
     # Transform points using predicted H
-    pred_pts_h = H_pred @ pts
+    pred_pts_h = np.dot(H_pred, pts)
     pred_pts = pred_pts_h[:2] / (pred_pts_h[2:] + 1e-12)
 
     # Transform points using ground truth H
-    gt_pts_h = H_gt @ pts
+    gt_pts_h = np.dot(H_gt, pts)
     gt_pts = gt_pts_h[:2] / (gt_pts_h[2:] + 1e-12)
 
     # Error vectors
@@ -63,7 +70,7 @@ def compute_homography_rmse(
 def compute_reprojection_errors(
     H_pred: Optional[np.ndarray],
     H_gt: Optional[np.ndarray],
-    image_shape: Tuple[int, int] = (512, 512),
+    image_shape: Optional[Tuple[int, int]] = None,
     grid_size: int = 20,
 ) -> Tuple[Optional[float], Optional[float], Optional[float]]:
     """
@@ -81,16 +88,19 @@ def compute_reprojection_errors(
     if H_pred.shape != (3, 3) or H_gt.shape != (3, 3):
         return None, None, None
 
+    if image_shape is None:
+        image_shape = DEFAULT_IMAGE_SHAPE
+
     h, w = image_shape
     xs = np.linspace(0, w - 1, grid_size)
     ys = np.linspace(0, h - 1, grid_size)
     grid_x, grid_y = np.meshgrid(xs, ys)
     pts = np.vstack([grid_x.ravel(), grid_y.ravel(), np.ones(grid_x.size)])
 
-    pred_pts_h = H_pred @ pts
+    pred_pts_h = np.dot(H_pred, pts)
     pred_pts = pred_pts_h[:2] / (pred_pts_h[2:] + 1e-12)
 
-    gt_pts_h = H_gt @ pts
+    gt_pts_h = np.dot(H_gt, pts)
     gt_pts = gt_pts_h[:2] / (gt_pts_h[2:] + 1e-12)
 
     distances = np.sqrt(np.sum((pred_pts - gt_pts) ** 2, axis=0))

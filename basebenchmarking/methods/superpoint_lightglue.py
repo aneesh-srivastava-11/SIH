@@ -111,7 +111,8 @@ class SuperPointLightGlueMethod(RegistrationMethod):
 
                 t0 = time.perf_counter()
 
-                extractor = SuperPoint(max_num_keypoints=2048).eval().to(device)
+                max_kp = getattr(config.matching, 'max_keypoints', 2048) if hasattr(config, 'matching') else 2048
+                extractor = SuperPoint(max_num_keypoints=max_kp).eval().to(device)
                 matcher = LightGlue(features="superpoint").eval().to(device)
 
                 t_ref = numpy_image_to_torch(ref_gray).unsqueeze(0).to(device)

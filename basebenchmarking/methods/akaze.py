@@ -37,6 +37,16 @@ class AKAZEMethod(RegistrationMethod):
     def run(self, reference_image: np.ndarray, target_image: np.ndarray, config: Any, pair_id: str = "") -> RegistrationResult:
         start_time = time.perf_counter()
 
+        avail, reason = self.is_available()
+        if not avail:
+            return RegistrationResult(
+                method=self.name,
+                pair_id=pair_id,
+                success=False,
+                runtime_ms=0.0,
+                error_message=f"AKAZE unavailable: {reason}",
+            )
+
         ref_gray = reference_image if len(reference_image.shape) == 2 else cv2.cvtColor(reference_image, cv2.COLOR_BGR2GRAY)
         tgt_gray = target_image if len(target_image.shape) == 2 else cv2.cvtColor(target_image, cv2.COLOR_BGR2GRAY)
 

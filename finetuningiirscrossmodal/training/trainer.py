@@ -14,6 +14,11 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 
+# Default optimization hyperparameters
+DEFAULT_ETA_MIN: float = 1e-6
+DEFAULT_MAX_NORM: float = 1.0
+
+
 class BaseMatcherTrainer:
     """
     Base Trainer class for fine-tuning feature matching models.
@@ -26,6 +31,9 @@ class BaseMatcherTrainer:
         model_name: Identifier for model ('eloftr' or 'roma').
         lr: Learning rate (default: 1e-4).
         weight_decay: Weight decay coefficient (default: 1e-4).
+        epochs: Number of training epochs (default: 50).
+        eta_min: Minimum learning rate for cosine annealing (default: 1e-6).
+        max_norm: Max gradient norm for clipping (default: 1.0).
         device: Target computation device ('cuda' or 'cpu').
     """
 
@@ -38,6 +46,9 @@ class BaseMatcherTrainer:
         model_name: str = "eloftr",
         lr: float = 1e-4,
         weight_decay: float = 1e-4,
+        epochs: int = 50,
+        eta_min: float = DEFAULT_ETA_MIN,
+        max_norm: float = DEFAULT_MAX_NORM,
         device: Optional[str] = None,
     ):
         self.model = model
@@ -48,6 +59,9 @@ class BaseMatcherTrainer:
         self.model_name = model_name
         self.lr = lr
         self.weight_decay = weight_decay
+        self.epochs = epochs
+        self.eta_min = eta_min
+        self.max_norm = max_norm
 
         if device is None:
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -59,7 +73,7 @@ class BaseMatcherTrainer:
         # Filter parameters requiring gradients
         trainable_params = [p for p in self.model.parameters() if p.requires_grad]
         self.optimizer = torch.optim.AdamW(trainable_params, lr=self.lr, weight_decay=self.weight_decay)
-        self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=50, eta_min=1e-6)
+        self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.epochs, eta_min=self.eta_min)
 
         self.best_val_loss = float("inf")
 
@@ -83,7 +97,7 @@ class BaseMatcherTrainer:
                 continue
 
             loss.backward()
-            nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+            nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=self.max_norm)
             self.optimizer.step()
 
             total_loss += loss.item()
@@ -113,13 +127,19 @@ class BaseMatcherTrainer:
 
     def fit(
         self,
-        epochs: int = 50,
+        epochs: Optional[int] = None,
         loss_fn: Optional[Callable] = None,
         patience: int = 10,
     ) -> Dict[str, Any]:
         """
         Executes full training pipeline across specified epochs with early stopping.
         """
+        num_epochs = epochs if epochs is not None else self.epochs
+        if num_epochs != self.epochs:
+            self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                self.optimizer, T_max=num_epochs, eta_min=self.eta_min
+            )
+
         if len(self.train_loader.dataset) == 0:
             print(f"[{self.model_name.upper()} Trainer] WARNING: Training dataset is empty.")
             print(f"Please populate rendered pairs in 'data/rendered_pairs/' with reference/target PNGs and pair JSONs.")
@@ -128,16 +148,16 @@ class BaseMatcherTrainer:
         history = {"train_loss": [], "val_loss": []}
         patience_counter = 0
 
-        print(f"--- Starting {self.model_name.upper()} Fine-Tuning ({epochs} epochs, device: {self.device}) ---")
+        print(f"--- Starting {self.model_name.upper()} Fine-Tuning ({num_epochs} epochs, device: {self.device}) ---")
 
-        for epoch in range(1, epochs + 1):
+        for epoch in range(1, num_epochs + 1):
             train_loss = self.train_epoch(loss_fn)
             val_loss = self.validate(loss_fn)
 
             history["train_loss"].append(train_loss)
             history["val_loss"].append(val_loss)
 
-            print(f"Epoch {epoch:02d}/{epochs:02d} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
+            print(f"Epoch {epoch:02d}/{num_epochs:02d} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
 
             # Save checkpoint per epoch
             ckpt_path = self.checkpoint_dir / f"finetuned_{self.model_name}_epoch{epoch}.pth"
