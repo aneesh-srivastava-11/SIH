@@ -36,7 +36,7 @@ def create_app() -> Flask:
 
 def main():
     app = create_app()
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5001))
     print(f"==================================================")
     print(f"  IMAGE REGISTRATION BENCHMARK DASHBOARD  ")
     print(f"==================================================")

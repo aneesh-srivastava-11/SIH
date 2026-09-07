@@ -172,7 +172,15 @@ class DatasetLoader:
 
         # Handle 16-bit or float images -> normalize to 8-bit uint8
         if img.dtype != np.uint8:
-            valid_mask = img > -30000
+            # Exclude NoData sentinels (e.g. dtype min for signed integers like -32768)
+            if np.issubdtype(img.dtype, np.signedinteger):
+                dtype_min = np.iinfo(img.dtype).min
+                valid_mask = img > dtype_min
+            elif np.issubdtype(img.dtype, np.floating):
+                valid_mask = np.isfinite(img)
+            else:
+                valid_mask = np.ones_like(img, dtype=bool)
+
             if np.any(valid_mask):
                 valid_pixels = img[valid_mask]
                 p_min = np.percentile(valid_pixels, 1)

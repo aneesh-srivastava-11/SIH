@@ -1,11 +1,16 @@
 import os
 import json
+import argparse
+from pathlib import Path
 import numpy as np
 import cv2
-import rasterio
-from rasterio.transform import from_bounds
-from rasterio.crs import CRS
 import glob
+
+# Portable defaults relative to this script's location
+_SCRIPT_DIR = Path(__file__).resolve().parent
+_DEFAULT_SRC_DIR = str(_SCRIPT_DIR / "data" / "cropped")
+_DEFAULT_DEST_DIR = str(_SCRIPT_DIR / "basebenchmarking" / "data" / "pairs")
+
 
 def get_adaptive_contrast(arr):
     # Mask out zero-padded background pixels (pixel > 0)
@@ -35,10 +40,15 @@ def clean_pairs_dir(dest_dir):
         except Exception as e:
             print(f"Warning: could not remove {f} - {e}")
 
-def convert_npy_to_tif():
-    src_dir = r"c:\Users\ANEESH\Desktop\SIH\data\cropped"
-    dest_dir = r"c:\Users\ANEESH\Desktop\SIH\basebenchmarking\data\pairs"
-    
+def convert_npy_to_tif(src_dir, dest_dir):
+    try:
+        import rasterio
+        from rasterio.transform import from_bounds
+        from rasterio.crs import CRS
+    except ImportError:
+        print("Error: 'rasterio' is required to convert data to GeoTIFF. Install it via 'pip install rasterio'.")
+        return
+
     os.makedirs(dest_dir, exist_ok=True)
     clean_pairs_dir(dest_dir)
     
@@ -120,4 +130,18 @@ def convert_npy_to_tif():
             print(f"Insufficient .npy files in {folder}: found {len(npy_files)}")
 
 if __name__ == "__main__":
-    convert_npy_to_tif()
+    parser = argparse.ArgumentParser(
+        description="Convert cropped .npy image pairs to GeoTIFF for benchmarking."
+    )
+    parser.add_argument(
+        "--src-dir",
+        default=_DEFAULT_SRC_DIR,
+        help=f"Source directory containing cropped pair folders (default: {_DEFAULT_SRC_DIR})",
+    )
+    parser.add_argument(
+        "--dest-dir",
+        default=_DEFAULT_DEST_DIR,
+        help=f"Destination directory for output GeoTIFFs (default: {_DEFAULT_DEST_DIR})",
+    )
+    args = parser.parse_args()
+    convert_npy_to_tif(args.src_dir, args.dest_dir)

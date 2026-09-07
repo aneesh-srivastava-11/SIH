@@ -15,6 +15,9 @@ import torch
 
 from finetuningiirscrossmodal.methods.base import RegistrationMethod, RegistrationResult
 
+# Dense optical flow grid sampling step in pixels
+DEFAULT_FLOW_SAMPLING_STRIDE: int = 16
+
 
 class FineTunedRoMaMethod(RegistrationMethod):
     """
@@ -227,7 +230,7 @@ class FineTunedRoMaMethod(RegistrationMethod):
             flow = out["flow"][0].cpu().numpy()  # [2, H, W]
             H, W = flow.shape[1:]
 
-            step = 16
+            step = DEFAULT_FLOW_SAMPLING_STRIDE
             grid_y, grid_x = np.meshgrid(np.arange(0, H, step), np.arange(0, W, step), indexing="ij")
 
             x0 = grid_x.ravel()

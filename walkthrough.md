@@ -4,7 +4,7 @@ We've completed the implementation plan to consolidate the data paths, add `.npy
 
 ## 1. Global Data Folder Setup
 
-- **Redundant Folders Removed**: Deleted the legacy `basebenchmarking/data` and `finetuningiirscrossmodal/data` directories. All data is now sourced from the global `C:\Users\ANEESH\Desktop\SIH\data` folder.
+- **Redundant Folders Removed**: Deleted the legacy `basebenchmarking/data` and `finetuningiirscrossmodal/data` directories. All data is now sourced from the project-level `data/` folder.
 - **Pipeline Overhaul**: Modified `DatasetLoader` in `basebenchmarking/pipeline/dataset.py` to:
   - Recursively search sub-directories (like `p1` and `p3`) inside `data/cropped/`.
   - Intelligently pair files inside these folders (if exactly two supported files are found, they are automatically designated as the reference and target pair).
@@ -13,7 +13,7 @@ We've completed the implementation plan to consolidate the data paths, add `.npy
 
 ## 2. CRS Verification
 
-I updated and ran `C:\Users\ANEESH\Desktop\SIH\Preprocess\check_crs.py` against all the raw root data formats. Here are the results:
+I updated and ran `Preprocess/check_crs.py` against all the raw root data formats. Here are the results:
 
 > [!WARNING]
 > **Missing CRS in NAC**

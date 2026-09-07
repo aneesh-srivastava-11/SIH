@@ -16,6 +16,9 @@ import torch.nn.functional as F
 from finetuningiirscrossmodal.training.trainer import BaseMatcherTrainer
 from finetuningiirscrossmodal.training.dataset import get_dataloader
 
+# Softmax temperature scaling for coarse correlation matrix
+SOFTMAX_TEMPERATURE: float = 0.1
+
 
 class DummyLoFTRModule(nn.Module):
     """
@@ -61,7 +64,8 @@ class DummyLoFTRModule(nn.Module):
         feat1_norm = F.normalize(t_feat1.flatten(2), dim=1) # [B, C, N]
 
         sim_matrix = torch.bmm(feat0_norm.transpose(1, 2), feat1_norm)  # [B, N, N]
-        conf_matrix = F.softmax(sim_matrix / 0.1, dim=-1) * F.softmax(sim_matrix / 0.1, dim=-2)
+        conf_matrix = (F.softmax(sim_matrix / SOFTMAX_TEMPERATURE, dim=-1) *
+                       F.softmax(sim_matrix / SOFTMAX_TEMPERATURE, dim=-2))
 
         return {
             "feat0": t_feat0,

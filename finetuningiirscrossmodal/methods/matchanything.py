@@ -18,6 +18,10 @@ import torch
 
 from finetuningiirscrossmodal.methods.base import RegistrationMethod, RegistrationResult
 
+# Default grid margin and density for fallback inference
+DEFAULT_GRID_MARGIN: int = 20
+DEFAULT_GRID_DENSITY: int = 16
+
 
 class MatchAnythingMethod(RegistrationMethod):
     """
@@ -205,10 +209,11 @@ class MatchAnythingMethod(RegistrationMethod):
             tgt_t = tgt_t.to(self.device)
 
             # Simulated / Lightweight Feature Extraction matching if model checkpoint not present
+            # TODO: Replace with real MatchAnything inference when weights are loaded
             H, W = ref_gray.shape
             grid_y, grid_x = np.meshgrid(
-                np.linspace(20, H - 20, 16),
-                np.linspace(20, W - 20, 16)
+                np.linspace(DEFAULT_GRID_MARGIN, H - DEFAULT_GRID_MARGIN, DEFAULT_GRID_DENSITY),
+                np.linspace(DEFAULT_GRID_MARGIN, W - DEFAULT_GRID_MARGIN, DEFAULT_GRID_DENSITY),
             )
             pts0 = np.column_stack([grid_x.ravel(), grid_y.ravel()])
             pts1 = pts0 + np.random.normal(0, 1.5, pts0.shape)  # Simulated match flow

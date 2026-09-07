@@ -3,7 +3,7 @@ Configuration Manager for Image Registration Benchmarking Pipeline.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 import os
 import yaml
 
@@ -13,7 +13,7 @@ class DatasetConfig:
     pairs_dir: str = "../data/cropped"
     ground_truth_dir: str = "../data/ground_truth"
     raw_dir: str = "../data/raw"
-    supported_formats: List[str] = field(default_factory=lambda: ["png", "jpg", "jpeg", "tif", "tiff"])
+    supported_formats: List[str] = field(default_factory=lambda: ["png", "jpg", "jpeg", "tif", "tiff", "npy", "qub", "img"])
     naming_pattern: str = "reference{n}"
 
 
@@ -36,6 +36,10 @@ class PreprocessingConfig:
 class MatchingConfig:
     ratio_test_threshold: float = 0.75
     min_matches: int = 4
+    flann_trees: int = 5
+    flann_checks: int = 50
+    max_keypoints: int = 2048
+    confidence_threshold: float = 0.2
 
 
 @dataclass
@@ -74,10 +78,21 @@ class LoggingConfig:
 
 
 @dataclass
+class TilingConfig:
+    enabled_for_dl: bool = True
+    grid_size: Tuple[int, int] = (3, 3)
+    min_dimension_threshold: int = 2000
+
+
+# Centralized default method list (avoid duplication)
+DEFAULT_ENABLED_METHODS = ["sift", "asift", "akaze", "rift2", "superpoint_lightglue", "efficient_loftr", "arosics"]
+
+
+@dataclass
 class BenchmarkConfig:
     dataset: DatasetConfig = field(default_factory=DatasetConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
-    enabled_methods: List[str] = field(default_factory=lambda: ["sift", "asift", "akaze", "rift2", "superpoint_lightglue", "efficient_loftr", "arosics"])
+    enabled_methods: List[str] = field(default_factory=lambda: list(DEFAULT_ENABLED_METHODS))
     preprocessing: PreprocessingConfig = field(default_factory=PreprocessingConfig)
     matching: MatchingConfig = field(default_factory=MatchingConfig)
     ransac: RansacConfig = field(default_factory=RansacConfig)
@@ -85,6 +100,7 @@ class BenchmarkConfig:
     visualization: VisualizationConfig = field(default_factory=VisualizationConfig)
     device: DeviceConfig = field(default_factory=DeviceConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
+    tiling: TilingConfig = field(default_factory=TilingConfig)
     base_dir: str = ""
 
     @classmethod
@@ -124,6 +140,7 @@ class BenchmarkConfig:
         vis_cfg = raw_cfg.get("visualization", {})
         dev_cfg = raw_cfg.get("device", {})
         log_cfg = raw_cfg.get("logging", {})
+        tiling_cfg = raw_cfg.get("tiling", {})
 
         # Environment variable overrides
         if os.environ.get("BENCHMARK_DATA_DIR"):
@@ -143,10 +160,14 @@ class BenchmarkConfig:
             else:
                 dataset_cfg[path_key] = abs_path
 
+        # Handle grid_size tuple from YAML list
+        if "grid_size" in tiling_cfg and isinstance(tiling_cfg["grid_size"], list):
+            tiling_cfg["grid_size"] = tuple(tiling_cfg["grid_size"])
+
         config = cls(
             dataset=DatasetConfig(**dataset_cfg),
             output=OutputConfig(**output_cfg),
-            enabled_methods=methods_cfg.get("enabled", ["sift", "asift", "akaze", "rift2", "superpoint_lightglue", "efficient_loftr", "arosics"]),
+            enabled_methods=methods_cfg.get("enabled", list(DEFAULT_ENABLED_METHODS)),
             preprocessing=PreprocessingConfig(**prep_cfg),
             matching=MatchingConfig(**match_cfg),
             ransac=RansacConfig(**ransac_cfg),
@@ -154,6 +175,7 @@ class BenchmarkConfig:
             visualization=VisualizationConfig(**vis_cfg),
             device=DeviceConfig(**dev_cfg),
             logging=LoggingConfig(**log_cfg),
+            tiling=TilingConfig(**tiling_cfg),
             base_dir=base_dir,
         )
 
