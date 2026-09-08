@@ -1,0 +1,37 @@
+reflectance:
+  model: lunar_lambert
+  eps: 1.0e-6
+
+albedo:
+  # A-TIER ASSUMPTION: Lunar normal albedo runs roughly 0.07 to 0.15. 
+  # Clamp range (0.02, 0.6) catches division blowups without encoding physics.
+  clamp_min: 0.02
+  clamp_max: 0.6
+  procedural_mean: 0.12
+  procedural_scale: 0.05
+  fbm_octaves: 4
+  fbm_sigma: 2.0
+
+sensor:
+  jitter_sigma: 0.0
+  secondary_eps: 0.015
+  signal_scale: 1000.0
+  psf_sigma: 0.7
+  read_noise_e: 1.5
+  gain: 1.0
+  offset: 10.0
+  bits: 16
+  to_8bit: False
+
+randomize:
+  azimuth: [0.0, 360.0]
+  elevation_eq: [20.0, 70.0]
+  elevation_polar: [0.0, 6.0]
+  albedo_scale: [0.7, 1.4]
+  additive_noise_sigma: [0.05, 0.15]
+  roughness_amp: [0.5, 1.5]
+  psf_sigma: [0.4, 1.0]
+  read_noise_e: [0.5, 3.0]
+  secondary_eps: [0.005, 0.03]
+  scale_ratio: [1.0, 20.0]
+  rotation: [-180.0, 180.0]
